@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Assignment - School LMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #059669, #047857) !important; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .card-header { border-radius: 12px 12px 0 0 !important; }
+        .form-label { font-weight: 500; font-size: 0.9rem; }
+        .form-control:focus, .form-select:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 0.2rem rgba(245,158,11,0.15);
+        }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b, #b45309); border: none; color: #fff; }
+        .btn-warning:hover { background: linear-gradient(135deg, #d97706, #92400e); color: #fff; }
+        .info-badge {
+            background: #ede9fe;
+            color: #4c1d95;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark px-4 py-3">
+    <span class="navbar-brand fw-bold">🏫 School LMS — Teacher</span>
+    <a href="{% url 'core:teacher_dashboard' %}" class="btn btn-outline-light btn-sm"> <!-- ✅ Fixed -->
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</nav>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header text-white py-3"
+                     style="background: linear-gradient(135deg, #f59e0b, #b45309);">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Edit Assignment
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- ✅ Subject info badge -->
+                    <div class="mb-4">
+                        <span class="info-badge">
+                            <i class="bi bi-book"></i>
+                            Subject: <strong>{{ assignment.subject.name }}</strong>
+                            — {{ assignment.subject.student_class }}
+                        </span>
+                    </div>
+
+                    <!-- ✅ Fixed messages -->
+                    {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- ✅ Fixed action -->
+                    <form method="POST" action="{% url 'core:edit_assignment' assignment.id %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Title <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-pencil"></i></span>
+                                <input type="text" name="title" class="form-control"
+                                       value="{{ assignment.title }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                                <input type="date" name="due_date" class="form-control"
+                                       value="{{ assignment.due_date|date:'Y-m-d' }}" required> <!-- ✅ Correct date format -->
+                            </div>
+                            <!-- ✅ Overdue warning -->
+                            {% if assignment.due_date < today %}
+                            <small class="text-danger">
+                                <i class="bi bi-exclamation-triangle"></i> Ye assignment overdue hai!
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="4"
+                                      placeholder="Assignment ki details likhein...">{{ assignment.description }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning py-2">
+                                <i class="bi bi-check-circle"></i> Update Assignment
+                            </button>
+                            <a href="{% url 'core:teacher_dashboard' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View Attendance - School LMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #064e3b, #047857) !important; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .card-header { border-radius: 12px 12px 0 0 !important; font-weight: 600; }
+        .badge-present { background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .badge-absent  { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .badge-leave   { background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .filter-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-control:focus, .form-select:focus {
+            border-color: #047857;
+            box-shadow: 0 0 0 0.2rem rgba(4,120,87,0.15);
+        }
+        .btn-success-custom {
+            background: linear-gradient(135deg, #064e3b, #047857);
+            border: none; color: #fff;
+        }
+        .btn-success-custom:hover {
+            background: linear-gradient(135deg, #043927, #036644);
+            color: #fff;
+        }
+        .stat-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark px-4 py-3">
+    <span class="navbar-brand fw-bold">🏫 School LMS — Teacher</span>
+    <a href="{% url 'core:teacher_dashboard' %}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</nav>
+
+<div class="container mt-4 pb-5">
+
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <h4 class="mb-3"><i class="bi bi-clipboard-data"></i> View Attendance</h4>
+
+    <!-- FILTER -->
+    <div class="filter-card">
+        <form method="GET" action="{% url 'core:view_attendance' %}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-500" style="font-weight:500;">Subject Filter</label>
+                    <select name="subject" class="form-select">
+                        <option value="">-- Sab Subjects --</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}"
+                            {% if selected_subject == subject.id|stringformat:"s" %}selected{% endif %}>
+                            {{ subject.name }} — {{ subject.student_class }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-500" style="font-weight:500;">Date Filter</label>
+                    <input type="date" name="date" class="form-control"
+                           value="{{ selected_date|default:'' }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-success-custom flex-grow-1">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                    <a href="{% url 'core:view_attendance' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- STATS -->
+    {% if attendance %}
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <span class="stat-pill" style="background:#d1fae5; color:#065f46;">
+            ✅ Present: {{ attendance|length }}
+        </span>
+        {% with present_count=0 absent_count=0 leave_count=0 %}
+        {% for a in attendance %}{% endfor %}
+        {% endwith %}
+    </div>
+    {% endif %}
+
+    <!-- ATTENDANCE TABLE -->
+    <div class="card">
+        <div class="card-header bg-danger text-white py-3">
+            <i class="bi bi-clipboard-check"></i> Attendance Records
+            {% if attendance %}
+                <span class="badge bg-light text-dark ms-2">{{ attendance|length }} records</span>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Roll No</th>
+                        <th>Subject</th>
+                        <th>Class</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ record.student.name }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ record.student.roll_number }}</span></td>
+                        <td>{{ record.subject.name|default:"—" }}</td>
+                        <td>{{ record.student.student_class }}</td>
+                        <td>
+                            <i class="bi bi-calendar3"></i>
+                            {{ record.date|date:"d M Y" }}
+                        </td>
+                        <td>
+                            {% if record.status == 'present' %}
+                                <span class="badge-present"><i class="bi bi-check-circle"></i> Present</span>
+                            {% elif record.status == 'absent' %}
+                                <span class="badge-absent"><i class="bi bi-x-circle"></i> Absent</span>
+                            {% elif record.status == 'leave' %}
+                                <span class="badge-leave"><i class="bi bi-clock"></i> Leave</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ record.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox" style="font-size:2.5rem;"></i><br>
+                            <span class="mt-2 d-block">Koi attendance record nahi mila.</span>
+                            {% if selected_subject or selected_date %}
+                            <a href="{% url 'core:view_attendance' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                                Filter clear karo
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if attendance %}
+        <div class="card-footer text-muted d-flex justify-content-between">
+            <span>Total: {{ attendance|length }} record(s)</span>
+            <a href="{% url 'core:mark_attendance' %}" class="btn btn-sm btn-success-custom">
+                <i class="bi bi-plus-circle"></i> Mark New Attendance
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

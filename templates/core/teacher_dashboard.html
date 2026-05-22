@@ -1,0 +1,414 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh; width: 260px;
+            background: linear-gradient(180deg, #064e3b 0%, #047857 100%);
+            color: #fff;
+            padding-top: 20px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto; /* ✅ Fixed - logout visible hoga */
+        }
+        .sidebar .brand {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 15px 10px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            margin-bottom: 15px;
+        }
+        .sidebar .user-info {
+            text-align: center;
+            padding: 0 15px 20px;
+            font-size: 0.9rem;
+            color: #d1fae5;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            margin-bottom: 15px;
+        }
+        .sidebar a.menu-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 22px;
+            color: #d1fae5;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+            border-left: 4px solid transparent;
+            cursor: pointer;
+        }
+        .sidebar a.menu-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            border-left-color: #34d399;
+        }
+        .sidebar a.menu-link.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-left-color: #34d399;
+            font-weight: 600;
+        }
+        .sidebar a.menu-link i { font-size: 1.2rem; width: 22px; }
+        .sidebar .logout-link {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+        .sidebar .logout-link button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 22px;
+            color: #d1fae5;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-left: 4px solid transparent;
+        }
+        .sidebar .logout-link button:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            border-left-color: #f87171;
+        }
+        .sidebar .logout-link button i { font-size: 1.2rem; width: 22px; }
+        .main-content {
+            margin-left: 260px;
+            padding: 25px 35px;
+            min-height: 100vh;
+        }
+        .topbar {
+            background: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar h4 { margin: 0; color: #064e3b; font-weight: 600; }
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .card-header { border-radius: 12px 12px 0 0 !important; font-weight: 600; padding: 15px 20px; }
+        .stat-card {
+            border-radius: 12px; color: #fff; padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.25s ease;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card h5 { font-weight: 600; margin-bottom: 8px; }
+        .stat-card h2 { font-weight: bold; margin: 5px 0; }
+        .bg-grad-1 { background: linear-gradient(135deg, #2563eb, #1e40af); }
+        .bg-grad-2 { background: linear-gradient(135deg, #dc2626, #991b1b); }
+        .bg-grad-3 { background: linear-gradient(135deg, #0891b2, #0e7490); }
+        .bg-grad-4 { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .toggle-btn {
+            display: none; background: #064e3b; color: #fff;
+            border: none; padding: 8px 14px; border-radius: 8px;
+            font-size: 1.2rem; cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 20px 15px; }
+            .toggle-btn { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="brand">🏫 School LMS</div>
+    <div class="user-info">
+        <i class="bi bi-person-badge" style="font-size: 2rem;"></i><br>
+        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong><br>
+        <small>Teacher</small>
+    </div>
+
+    <a class="menu-link active" data-section="dashboard">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    <a class="menu-link" data-section="assignments">
+        <i class="bi bi-journal-text"></i> My Assignments
+    </a>
+    <a class="menu-link" data-section="attendance">
+        <i class="bi bi-clipboard-check"></i> Attendance
+    </a>
+    <a class="menu-link" data-section="subjects">
+        <i class="bi bi-book-half"></i> Subjects
+    </a>
+    <a class="menu-link" data-section="results">
+        <i class="bi bi-bar-chart-fill"></i> Results
+    </a>
+    <a class="menu-link" data-section="announcements">
+        <i class="bi bi-megaphone-fill"></i> Announcements
+    </a>
+
+    <div class="logout-link">
+        <form method="POST" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+    {% if messages %}
+        <div class="mb-3">
+        {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div>
+            <button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
+            <h4 style="display:inline-block; margin-left:10px;">
+                Welcome, {{ request.user.get_full_name|default:request.user.username }}! 👋
+            </h4>
+        </div>
+        <span class="text-muted"><i class="bi bi-calendar3"></i> {% now "d M, Y" %}</span>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="dashboard">
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card bg-grad-1">
+                    <h5><i class="bi bi-journal-text"></i> Assignments</h5>
+                    <h2>{{ assignments.count }}</h2>
+                    <a href="{% url 'core:add_assignment' %}" class="btn btn-light btn-sm">+ Add New</a>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card bg-grad-2">
+                    <h5><i class="bi bi-clipboard-check"></i> Attendance</h5>
+                    <p class="mb-2">Mark today's attendance</p>
+                    <a href="{% url 'core:mark_attendance' %}" class="btn btn-light btn-sm">Mark Now</a>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card bg-grad-3">
+                    <h5><i class="bi bi-book-half"></i> Subjects</h5>
+                    <h2>{{ subjects.count }}</h2>
+                    <small>Total subjects</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card bg-grad-4">
+                    <h5><i class="bi bi-bar-chart-fill"></i> Results</h5>
+                    <p class="mb-2">Add student results</p>
+                    <a href="{% url 'core:add_result' %}" class="btn btn-light btn-sm">+ Add Result</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-megaphone-fill"></i> Latest Announcements
+            </div>
+            <div class="card-body">
+                {% for a in announcements|slice:":2" %}
+                    <div class="alert alert-warning">
+                        <strong>{{ a.title }}</strong>
+                        <small class="text-muted ms-2">{{ a.created_at|date:"d M Y" }}</small>
+                        <p class="mb-0">{{ a.message }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-muted text-center mb-0">Koi announcement nahi abhi tak.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSIGNMENTS -->
+    <div class="section" id="assignments">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-journal-text"></i> My Assignments</span>
+                <a href="{% url 'core:add_assignment' %}" class="btn btn-light btn-sm">+ Add</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th><th>Title</th><th>Subject</th><th>Due Date</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in assignments %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ a.title }}</td>
+                            <td>{{ a.subject.name }}</td>
+                            <td>
+                                {{ a.due_date }}
+                                {% if a.is_overdue %}
+                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'core:edit_assignment' a.id %}" class="btn btn-warning btn-sm">Edit</a>
+                                <form method="POST" action="{% url 'core:delete_assignment' a.id %}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Assignment delete ho jayegi!')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Koi assignment nahi abhi tak.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="attendance">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-clipboard-check"></i> Attendance Management
+            </div>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-clipboard-check" style="font-size: 4rem; color: #dc2626;"></i>
+                <h4 class="mt-3">Mark Student Attendance</h4>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <a href="{% url 'core:mark_attendance' %}" class="btn btn-danger btn-lg">
+                        <i class="bi bi-pencil-square"></i> Mark Attendance
+                    </a>
+                    <a href="{% url 'core:view_attendance' %}" class="btn btn-outline-danger btn-lg">
+                        <i class="bi bi-eye"></i> View Attendance
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUBJECTS -->
+    <div class="section" id="subjects">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-book-half"></i> My Subjects
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr><th>#</th><th>Subject Name</th><th>Class</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for s in subjects %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ s.name }}</td>
+                            <td>{{ s.student_class }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted">Koi subject assigned nahi.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="section" id="results">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-bar-chart-fill"></i> Results Management
+            </div>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-bar-chart-fill" style="font-size: 4rem; color: #f59e0b;"></i>
+                <h4 class="mt-3">Add Student Results</h4>
+                <a href="{% url 'core:add_result' %}" class="btn btn-warning btn-lg mt-2">
+                    <i class="bi bi-plus-circle"></i> Add New Result
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="section" id="announcements">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-megaphone-fill"></i> Announcements
+            </div>
+            <div class="card-body">
+                {% for a in announcements %}
+                    <div class="alert alert-warning">
+                        <strong>{{ a.title }}</strong>
+                        <small class="text-muted ms-2">{{ a.created_at|date:"d M Y" }}</small>
+                        <p class="mb-0">{{ a.message }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-muted text-center mb-0">Koi announcement nahi abhi tak.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const menuLinks = document.querySelectorAll('.menu-link[data-section]');
+    const sections = document.querySelectorAll('.section');
+
+    menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const target = link.getAttribute('data-section');
+            menuLinks.forEach(l => l.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            link.classList.add('active');
+            document.getElementById(target).classList.add('active');
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('show');
+            }
+        });
+    });
+
+    document.getElementById('toggleBtn').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('show');
+    });
+</script>
+
+</body>
+</html>

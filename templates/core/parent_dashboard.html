@@ -1,0 +1,364 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parent Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; overflow-x: hidden; }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 260px; background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); color: #fff; padding-top: 20px; transition: all 0.3s ease; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; }
+        .sidebar .brand { text-align: center; font-size: 1.3rem; font-weight: bold; padding: 15px 10px 25px; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 15px; }
+        .sidebar .user-info { text-align: center; padding: 0 15px 20px; font-size: 0.9rem; color: #cfd8ff; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 15px; }
+        .sidebar a.menu-link { display: flex; align-items: center; gap: 12px; padding: 12px 22px; color: #cfd8ff; text-decoration: none; font-size: 0.95rem; transition: all 0.25s ease; border-left: 4px solid transparent; cursor: pointer; }
+        .sidebar a.menu-link:hover { background: rgba(255,255,255,0.08); color: #fff; border-left-color: #38bdf8; }
+        .sidebar a.menu-link.active { background: rgba(255,255,255,0.15); color: #fff; border-left-color: #38bdf8; font-weight: 600; }
+        .sidebar a.menu-link i { font-size: 1.2rem; width: 22px; }
+        .sidebar .logout-link { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 15px; padding-bottom: 15px; }
+        .sidebar .logout-link button { display: flex; align-items: center; gap: 12px; padding: 12px 22px; color: #cfd8ff; font-size: 0.95rem; transition: all 0.25s ease; cursor: pointer; width: 100%; background: transparent; border: none; border-left: 4px solid transparent; }
+        .sidebar .logout-link button:hover { background: rgba(255,255,255,0.08); color: #fff; border-left-color: #f87171; }
+        .sidebar .logout-link button i { font-size: 1.2rem; width: 22px; }
+        .main-content { margin-left: 260px; padding: 25px 35px; min-height: 100vh; }
+        .topbar { background: #fff; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .topbar h4 { margin: 0; color: #1e3a8a; font-weight: 600; }
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .card-header { border-radius: 12px 12px 0 0 !important; font-weight: 600; padding: 15px 20px; }
+        .toggle-btn { display: none; background: #1e3a8a; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 1.2rem; cursor: pointer; }
+        .term-folder { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 15px rgba(0,0,0,0.08); margin-bottom: 18px; }
+        .term-folder .term-header { padding: 16px 22px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; transition: filter 0.2s; }
+        .term-folder .term-header:hover { filter: brightness(0.95); }
+        .term-header-first  { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; }
+        .term-header-second { background: linear-gradient(135deg, #065f46, #047857); color: #fff; }
+        .term-header-third  { background: linear-gradient(135deg, #7c2d12, #c2410c); color: #fff; }
+        .term-folder-body { background: #fff; }
+        .term-folder-body table { margin: 0; }
+        .total-row td { background: #f1f5f9; font-weight: 700; font-size: 0.95rem; border-top: 2px solid #cbd5e1 !important; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .sidebar.show { transform: translateX(0); } .main-content { margin-left: 0; padding: 20px 15px; } .toggle-btn { display: block; } }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+    <div class="brand">🏫 School LMS</div>
+    <div class="user-info">
+        <i class="bi bi-person-circle" style="font-size: 2rem;"></i><br>
+        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong><br>
+        <small>Parent</small>
+    </div>
+    <a class="menu-link active" data-section="children"><i class="bi bi-people-fill"></i> My Children</a>
+    <a class="menu-link" data-section="attendance"><i class="bi bi-clipboard-check"></i> Attendance</a>
+    <a class="menu-link" data-section="assignments"><i class="bi bi-journal-text"></i> Assignments</a>
+    <a class="menu-link" data-section="results"><i class="bi bi-bar-chart-fill"></i> Results</a>
+    <a class="menu-link" data-section="fees"><i class="bi bi-cash-coin"></i> Fee Status</a>
+    <a class="menu-link" data-section="announcements"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+    <div class="logout-link">
+        <form method="POST" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit"><i class="bi bi-box-arrow-right"></i> Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="main-content">
+    {% if messages %}
+    <div class="mb-3">
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="topbar">
+        <div>
+            <button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
+            <h4 style="display:inline-block; margin-left:10px;">Welcome, {{ request.user.get_full_name|default:request.user.username }}! 👋</h4>
+        </div>
+        <span class="text-muted"><i class="bi bi-calendar3"></i> {% now "d M, Y" %}</span>
+    </div>
+
+    <!-- MY CHILDREN -->
+    <div class="section active" id="children">
+        <div class="card">
+            <div class="card-header bg-primary text-white"><i class="bi bi-people-fill"></i> My Children</div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-dark"><tr><th>#</th><th>Name</th><th>Roll Number</th><th>Class</th><th>Email</th></tr></thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.roll_number }}</td>
+                            <td>{{ student.student_class }}</td>
+                            <td>{{ student.email|default:"—" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Koi student link nahi - Admin se contact karo.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section" id="attendance">
+        <div class="card">
+            <div class="card-header bg-danger text-white"><i class="bi bi-clipboard-check"></i> Recent Attendance</div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-dark"><tr><th>#</th><th>Student</th><th>Subject</th><th>Date</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for a in attendance %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td><td>{{ a.student.name }}</td><td>{{ a.subject.name|default:"—" }}</td><td>{{ a.date }}</td>
+                            <td>
+                                {% if a.status == 'present' %}<span class="badge bg-success">✅ Present</span>
+                                {% elif a.status == 'absent' %}<span class="badge bg-danger">❌ Absent</span>
+                                {% else %}<span class="badge bg-warning text-dark">🟡 Leave</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Koi attendance record nahi.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSIGNMENTS -->
+    <div class="section" id="assignments">
+        <div class="card">
+            <div class="card-header bg-info text-white"><i class="bi bi-journal-text"></i> Assignments</div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-dark"><tr><th>#</th><th>Title</th><th>Subject</th><th>Due Date</th><th>Description</th></tr></thead>
+                    <tbody>
+                        {% for a in assignments %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td><td>{{ a.title }}</td><td>{{ a.subject.name }}</td>
+                            <td>{{ a.due_date }}{% if a.is_overdue %}<span class="badge bg-danger ms-1">Overdue</span>{% endif %}</td>
+                            <td>{{ a.description|default:"—"|truncatewords:10 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Koi assignment nahi abhi tak.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="section" id="results">
+        <h5 class="mb-3 text-muted"><i class="bi bi-folder2-open"></i> Results — Term wise</h5>
+
+        {% if results %}
+
+        {% for term_key, term_label, header_class, badge_class, icon_color in terms_meta %}
+        <div class="term-folder">
+            <div class="term-header {{ header_class }}" onclick="toggleTerm('{{ term_key }}')">
+                <span>
+                    <i class="bi bi-folder-fill me-2"></i>
+                    <strong>📁 {{ term_label }}</strong>
+                    <span class="badge bg-white {{ badge_class }} ms-2" style="font-size:0.78rem;" id="count-{{ term_key }}"></span>
+                </span>
+                <i class="bi bi-chevron-down" id="icon-{{ term_key }}"></i>
+            </div>
+            <div class="term-folder-body collapse show" id="term-{{ term_key }}">
+                <table class="table table-hover mb-0" id="table-{{ term_key }}">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Student</th><th>Subject</th><th>Marks</th><th>Total</th><th>%</th><th>Grade</th></tr>
+                    </thead>
+                    <tbody id="tbody-{{ term_key }}">
+                        {% for r in results %}
+                        {% if r.term == term_key %}
+                        <tr data-marks="{{ r.marks }}" data-total="{{ r.total_marks }}" data-pct="{{ r.percentage }}">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ r.student.name }}</td>
+                            <td>{{ r.subject.name }}</td>
+                            <td><strong>{{ r.marks }}</strong></td>
+                            <td>{{ r.total_marks }}</td>
+                            <td>{{ r.percentage }}%</td>
+                            <td>
+                                {% if r.percentage < 33 %}
+                                    <span class="badge bg-danger">F</span>
+                                {% elif r.percentage < 50 %}
+                                    <span class="badge bg-danger">D</span>
+                                {% elif r.percentage < 60 %}
+                                    <span class="badge bg-warning text-dark">C</span>
+                                {% elif r.percentage < 70 %}
+                                    <span class="badge bg-warning text-dark">B</span>
+                                {% elif r.percentage < 80 %}
+                                    <span class="badge bg-info text-dark">B+</span>
+                                {% elif r.percentage < 90 %}
+                                    <span class="badge bg-success">A</span>
+                                {% else %}
+                                    <span class="badge bg-success">A+</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                    <!-- Total row — JS se fill hoga -->
+                    <tfoot>
+                        <tr class="total-row" id="total-{{ term_key }}" style="display:none;">
+                            <td colspan="3" class="text-end"><i class="bi bi-calculator me-1"></i> <strong>Total</strong></td>
+                            <td id="total-marks-{{ term_key }}">—</td>
+                            <td id="total-max-{{ term_key }}">—</td>
+                            <td id="total-pct-{{ term_key }}">—</td>
+                            <td id="total-grade-{{ term_key }}">—</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <p class="text-muted text-center py-3 mb-0" id="empty-{{ term_key }}" style="display:none;">{{ term_label }} ka koi result nahi.</p>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-inbox" style="font-size:2.5rem;"></i><br>
+                <span class="d-block mt-2">Koi result nahi abhi tak.</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- FEES -->
+    <div class="section" id="fees">
+        <div class="card">
+            <div class="card-header bg-primary text-white"><i class="bi bi-cash-coin"></i> Fee Status</div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead class="table-dark"><tr><th>#</th><th>Student</th><th>Month</th><th>Year</th><th>Amount</th><th>Status</th><th>Date Paid</th></tr></thead>
+                    <tbody>
+                        {% for f in fees %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td><td>{{ f.student.name }}</td><td>{{ f.get_month_display }}</td><td>{{ f.year }}</td><td>Rs. {{ f.amount }}</td>
+                            <td>
+                                {% if f.status == 'paid' %}<span class="badge bg-success">✅ Paid</span>
+                                {% elif f.status == 'unpaid' %}<span class="badge bg-danger">❌ Unpaid</span>
+                                {% else %}<span class="badge bg-warning text-dark">⚠️ Partial</span>{% endif %}
+                            </td>
+                            <td>{{ f.date_paid|default:"—" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted">Koi fee record nahi abhi tak.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="section" id="announcements">
+        <div class="card">
+            <div class="card-header bg-warning text-dark"><i class="bi bi-megaphone-fill"></i> Announcements</div>
+            <div class="card-body">
+                {% for a in announcements %}
+                <div class="alert alert-info">
+                    <strong>{{ a.title }}</strong><small class="text-muted ms-2">{{ a.created_at|date:"d M Y" }}</small>
+                    <p class="mb-0">{{ a.message }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">Koi announcement nahi abhi tak.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Sidebar navigation
+    const menuLinks = document.querySelectorAll('.menu-link[data-section]');
+    const sections = document.querySelectorAll('.section');
+    menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const target = link.getAttribute('data-section');
+            menuLinks.forEach(l => l.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            link.classList.add('active');
+            document.getElementById(target).classList.add('active');
+            if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('show');
+        });
+    });
+    document.getElementById('toggleBtn').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('show');
+    });
+
+    // Grade helper (33% se neeche = F)
+    function getGradeBadge(pct) {
+        if (pct < 33)  return '<span class="badge bg-danger">F</span>';
+        if (pct < 50)  return '<span class="badge bg-danger">D</span>';
+        if (pct < 60)  return '<span class="badge bg-warning text-dark">C</span>';
+        if (pct < 70)  return '<span class="badge bg-warning text-dark">B</span>';
+        if (pct < 80)  return '<span class="badge bg-info text-dark">B+</span>';
+        if (pct < 90)  return '<span class="badge bg-success">A</span>';
+        return '<span class="badge bg-success">A+</span>';
+    }
+
+    // Term counts + total row
+    ['first', 'second', 'third'].forEach(function(term) {
+        const tbody = document.getElementById('tbody-' + term);
+        const emptyMsg = document.getElementById('empty-' + term);
+        const countBadge = document.getElementById('count-' + term);
+        const table = document.getElementById('table-' + term);
+        const totalRow = document.getElementById('total-' + term);
+        if (!tbody) return;
+
+        const rows = tbody.querySelectorAll('tr');
+        const rowCount = rows.length;
+
+        if (rowCount === 0) {
+            if (table) table.style.display = 'none';
+            if (emptyMsg) emptyMsg.style.display = 'block';
+            if (countBadge) countBadge.textContent = '0 subjects';
+        } else {
+            if (countBadge) countBadge.textContent = rowCount + ' subject(s)';
+
+            // Total marks calculate karo
+            let totalMarks = 0, totalMax = 0;
+            rows.forEach(row => {
+                totalMarks += parseFloat(row.dataset.marks || 0);
+                totalMax   += parseFloat(row.dataset.total || 0);
+            });
+            const totalPct = totalMax > 0 ? ((totalMarks / totalMax) * 100).toFixed(1) : 0;
+
+            // Total row fill karo
+            if (totalRow) {
+                totalRow.style.display = '';
+                document.getElementById('total-marks-' + term).textContent = totalMarks;
+                document.getElementById('total-max-' + term).textContent = totalMax;
+                document.getElementById('total-pct-' + term).textContent = totalPct + '%';
+                document.getElementById('total-grade-' + term).innerHTML = getGradeBadge(parseFloat(totalPct));
+            }
+        }
+    });
+
+    // Term folder toggle
+    function toggleTerm(term) {
+        const body = document.getElementById('term-' + term);
+        const icon = document.getElementById('icon-' + term);
+        if (body.classList.contains('show')) {
+            body.classList.remove('show');
+            if (icon) icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
+        } else {
+            body.classList.add('show');
+            if (icon) icon.classList.replace('bi-chevron-right', 'bi-chevron-down');
+        }
+    }
+</script>
+</body>
+</html>

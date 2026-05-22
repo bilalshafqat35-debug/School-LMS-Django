@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success px-4">
+    <span class="navbar-brand">🏫 School LMS — Teacher</span>
+    <a href="{% url 'core:teacher_dashboard' %}" class="btn btn-outline-light btn-sm">← Back</a>
+</nav>
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">📊 Add Results — Bulk</h5>
+        </div>
+        <div class="card-body">
+
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" action="{% url 'core:add_result' %}">
+                {% csrf_token %}
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">📘 Term</label>
+                        <select name="term" class="form-select" required>
+                            <option value="first">📘 First Term</option>
+                            <option value="second">📗 Second Term</option>
+                            <option value="third">📕 Third Term</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">📚 Subject</label>
+                        <select name="subject" class="form-select" required>
+                            <option value="">-- Subject Select Karo --</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}">
+                                    {{ subject.name }} ({{ subject.student_class }})  <!-- ✅ Class bhi show -->
+                                </option>
+                            {% empty %}
+                                <option disabled>Koi subject assign nahi - Admin se contact karo</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">🔢 Total Marks</label>
+                        <input type="number" name="total_marks" class="form-control"
+                               value="100" min="1" required id="totalMarksInput">
+                    </div>
+                </div>
+
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Student Name</th>
+                            <th>Roll Number</th>
+                            <th>Class</th>
+                            <th>Marks Obtained</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.roll_number }}</td>
+                            <td>{{ student.student_class }}</td>
+                            <td>
+                                <input type="number"
+                                       name="marks_{{ student.id }}"
+                                       class="form-control form-control-sm marks-input"
+                                       min="0" max="100"
+                                       placeholder="Marks (0-100)">
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">
+                                ⚠️ Koi student nahi - Pehle students add karo
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if students %}
+                <button type="submit" class="btn btn-info w-100 mt-2 text-white">
+                    ✅ Submit All Results
+                </button>
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ✅ Total marks change hone pe sab inputs ka max update ho
+    document.getElementById('totalMarksInput').addEventListener('input', function() {
+        const total = this.value;
+        document.querySelectorAll('.marks-input').forEach(function(input) {
+            input.max = total;
+            input.placeholder = 'Marks (0-' + total + ')';
+        });
+    });
+</script>
+
+</body>
+</html>

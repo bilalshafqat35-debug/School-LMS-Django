@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Assign Teacher - School LMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #1e1b4b, #4c1d95) !important; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .card-header { border-radius: 12px 12px 0 0 !important; }
+        .form-label { font-weight: 500; font-size: 0.9rem; }
+        .form-control:focus, .form-select:focus {
+            border-color: #4c1d95;
+            box-shadow: 0 0 0 0.2rem rgba(76,29,149,0.15);
+        }
+        .btn-primary { background: linear-gradient(135deg, #4c1d95, #6d28d9); border: none; }
+        .btn-primary:hover { background: linear-gradient(135deg, #3b1678, #5b21b6); }
+
+        .subject-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1.5px solid #e5e7eb;
+            margin-bottom: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .subject-item:hover { border-color: #6d28d9; background: #faf5ff; }
+        .subject-item.selected {
+            border-color: #6d28d9;
+            background: #ede9fe;
+        }
+        .subject-item input[type="checkbox"] {
+            width: 18px; height: 18px;
+            accent-color: #6d28d9;
+            cursor: pointer;
+        }
+        .class-badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .teacher-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        .unassigned-badge {
+            background: #f3f4f6;
+            color: #6b7280;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        .select-all-bar {
+            background: #f5f3ff;
+            border: 1.5px solid #ddd6fe;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .selected-count {
+            font-size: 0.85rem;
+            color: #6d28d9;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark px-4 py-3">
+    <span class="navbar-brand fw-bold">🏫 School LMS — Admin</span>
+    <a href="{% url 'core:manage_subjects' %}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Subjects
+    </a>
+</nav>
+
+<div class="container mt-4 pb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+
+            <!-- Messages -->
+            {% if messages %}
+            <div class="mb-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Step 1: Teacher Select -->
+            <div class="card mb-4">
+                <div class="card-header text-white py-3"
+                     style="background: linear-gradient(135deg, #4c1d95, #6d28d9);">
+                    <h5 class="mb-0"><i class="bi bi-person-check"></i> Teacher ko Subjects Assign Karo</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-info-circle"></i>
+                        Pehle teacher select karo, phir jo bhi subjects us teacher ko assign karne hain wo checkmark karo.
+                        Ek teacher multiple classes ke multiple subjects parhaa sakta hai.
+                    </p>
+
+                    <!-- Teacher Selector -->
+                    <form method="GET" action="{% url 'core:assign_teacher' %}">
+                        <div class="d-flex gap-2 align-items-end">
+                            <div class="flex-grow-1">
+                                <label class="form-label">Teacher Select Karo <span class="text-danger">*</span></label>
+                                <select name="teacher_id" class="form-select" required>
+                                    <option value="">-- Teacher chunein --</option>
+                                    {% for teacher in teachers %}
+                                    <option value="{{ teacher.id }}"
+                                        {% if selected_teacher_id == teacher.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ teacher.get_full_name|default:teacher.username }}
+                                        ({{ teacher.email|default:"no email" }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-search"></i> Load
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Step 2: Subjects Assign (sirf tab dikhao jab teacher select ho) -->
+            {% if selected_teacher %}
+            <div class="card">
+                <div class="card-header py-3" style="background: #f5f3ff; border-bottom: 2px solid #ddd6fe;">
+                    <h6 class="mb-0 text-purple" style="color: #4c1d95;">
+                        <i class="bi bi-book-half"></i>
+                        <strong>{{ selected_teacher.get_full_name|default:selected_teacher.username }}</strong>
+                        ke liye subjects select karo
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+
+                    <form method="POST" action="{% url 'core:assign_teacher' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="teacher_id" value="{{ selected_teacher.id }}">
+
+                        <!-- Select All Bar -->
+                        <div class="select-all-bar">
+                            <input type="checkbox" id="selectAll" style="width:18px; height:18px; accent-color:#6d28d9; cursor:pointer;">
+                            <label for="selectAll" style="cursor:pointer; font-weight:600; color:#4c1d95; margin:0;">
+                                Sab Select Karo / Hatao
+                            </label>
+                            <span class="selected-count ms-auto" id="countDisplay">0 selected</span>
+                        </div>
+
+                        <!-- Subjects List -->
+                        {% if subjects %}
+                            {% regroup subjects by student_class as class_subjects %}
+                            {% for class_group in class_subjects %}
+                            <div class="mb-3">
+                                <div class="fw-bold text-muted mb-2" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px;">
+                                    <i class="bi bi-building"></i> {{ class_group.grouper }}
+                                </div>
+                                {% for subject in class_group.list %}
+                                <label class="subject-item {% if subject.id in teacher_subjects %}selected{% endif %}"
+                                       id="label_{{ subject.id }}">
+                                    <input type="checkbox"
+                                           name="subjects"
+                                           value="{{ subject.id }}"
+                                           class="subject-checkbox"
+                                           {% if subject.id in teacher_subjects %}checked{% endif %}>
+                                    <div class="flex-grow-1">
+                                        <strong>{{ subject.name }}</strong>
+                                    </div>
+                                    <span class="class-badge">{{ subject.student_class }}</span>
+                                    {% if subject.teacher %}
+                                        {% if subject.teacher == selected_teacher %}
+                                            <span class="badge bg-success" style="font-size:0.72rem;">
+                                                <i class="bi bi-check-circle"></i> Already Assigned
+                                            </span>
+                                        {% else %}
+                                            <span class="teacher-badge">
+                                                <i class="bi bi-person"></i>
+                                                {{ subject.teacher.get_full_name|default:subject.teacher.username }}
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="unassigned-badge">
+                                            <i class="bi bi-person-dash"></i> Unassigned
+                                        </span>
+                                    {% endif %}
+                                </label>
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size:2rem;"></i><br>
+                                Koi subject nahi. Pehle subjects add karo.
+                            </div>
+                        {% endif %}
+
+                        <!-- Warning -->
+                        <div class="alert alert-warning mt-3" style="font-size:0.85rem;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Note:</strong> Save karne se pehle sirf is teacher ke subjects update honge.
+                            Agar kisi subject pe dusra teacher tha, wo replace ho jayega.
+                        </div>
+
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary py-2">
+                                <i class="bi bi-save"></i> Save Assignments
+                            </button>
+                            <a href="{% url 'core:manage_subjects' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Checkbox visual highlight
+    document.querySelectorAll('.subject-checkbox').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const label = document.getElementById('label_' + this.value);
+            if (this.checked) {
+                label.classList.add('selected');
+            } else {
+                label.classList.remove('selected');
+            }
+            updateCount();
+        });
+    });
+
+    // Select All
+    document.getElementById('selectAll')?.addEventListener('change', function() {
+        document.querySelectorAll('.subject-checkbox').forEach(function(cb) {
+            cb.checked = document.getElementById('selectAll').checked;
+            const label = document.getElementById('label_' + cb.value);
+            if (cb.checked) {
+                label.classList.add('selected');
+            } else {
+                label.classList.remove('selected');
+            }
+        });
+        updateCount();
+    });
+
+    // Count display
+    function updateCount() {
+        const total = document.querySelectorAll('.subject-checkbox:checked').length;
+        const display = document.getElementById('countDisplay');
+        if (display) display.textContent = total + ' selected';
+    }
+
+    // Initial count
+    updateCount();
+</script>
+</body>
+</html>
