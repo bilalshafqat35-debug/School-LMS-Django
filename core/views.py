@@ -750,19 +750,18 @@ def add_fee(request):
                 month=int(month), year=int(year), status=status
             )
             if status in ['paid', 'partial'] and date_paid:
-    try:
-        from datetime import datetime
-        # Try DD/MM/YYYY format first
-        if '/' in date_paid:
-            fee.date_paid = datetime.strptime(date_paid, '%d/%m/%Y').date()
-        else:
-            fee.date_paid = date_paid
-        fee.save()
-    except ValueError:
-        pass
-        messages.success(request, 'Fee successfully add ho gayi!')
-        return redirect('core:manage_fees')
-    except Exception as e:
+                try:
+                    from datetime import datetime
+                    if '/' in date_paid:
+                        fee.date_paid = datetime.strptime(date_paid, '%d/%m/%Y').date()
+                    else:
+                        fee.date_paid = date_paid
+                    fee.save()
+                except ValueError:
+                    pass
+            messages.success(request, 'Fee successfully add ho gayi!')
+            return redirect('core:manage_fees')
+        except Exception as e:
             logger.error(f"Add fee error: {str(e)}")
             messages.error(request, 'Fee add karte waqt error aaya!')
     return render(request, 'core/add_fee.html', {'students': Student.objects.all()})
