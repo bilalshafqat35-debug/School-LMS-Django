@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-oo$4m65o^_zyzh13^&n0hufxzhdxu@htsl68c-(r!mhrnt8oz+'
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']  # Development ke liye
 
@@ -102,3 +102,5 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
+import os
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
