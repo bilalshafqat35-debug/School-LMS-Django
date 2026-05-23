@@ -744,21 +744,22 @@ def add_fee(request):
             messages.error(request, 'Amount mein sirf numbers likho (jaise: 5000)')
             return render(request, 'core/add_fee.html', {'students': Student.objects.all()})
         try:
+            from datetime import datetime
+            parsed_date = None
+            if status in ['paid', 'partial'] and date_paid:
+                try:
+                    if '/' in date_paid:
+                        parsed_date = datetime.strptime(date_paid, '%d/%m/%Y').date()
+                    else:
+                        parsed_date = date_paid
+                except ValueError:
+                    pass
             student = get_object_or_404(Student, id=student_id)
             fee = Fee.objects.create(
                 student=student, amount=amount,
-                month=int(month), year=int(year), status=status
+                month=int(month), year=int(year),
+                status=status, date_paid=parsed_date
             )
-            if status in ['paid', 'partial'] and date_paid:
-                try:
-                    from datetime import datetime
-                    if '/' in date_paid:
-                        fee.date_paid = datetime.strptime(date_paid, '%d/%m/%Y').date()
-                    else:
-                        fee.date_paid = date_paid
-                    fee.save()
-                except ValueError:
-                    pass
             messages.success(request, 'Fee successfully add ho gayi!')
             return redirect('core:manage_fees')
         except Exception as e:
