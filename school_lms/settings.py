@@ -104,3 +104,7 @@ MESSAGE_TAGS = {
 }
 import os
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+import dj_database_url
+DATABASES = {
+    'default': dj_database_url.config(conn_max_age=600)
+}
