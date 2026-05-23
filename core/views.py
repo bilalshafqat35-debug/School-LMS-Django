@@ -725,7 +725,7 @@ def manage_fees(request):
     })
 
 @login_required(login_url='login')
-@user_passes_test(is_fee_manager)
+@user_passes_test(is_admin_or_fee_manager)
 @require_http_methods(["GET", "POST"])
 def add_fee(request):
     if request.method == 'POST':
