@@ -108,3 +108,4 @@ import dj_database_url
 DATABASES = {
     'default': dj_database_url.config(conn_max_age=600)
 }
+CSRF_TRUSTED_ORIGINS = ['https://school-lms-django-production.up.railway.app']
