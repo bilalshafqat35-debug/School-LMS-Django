@@ -52,29 +52,6 @@
             <i class="bi bi-plus-circle"></i> Add Fee
         </a>
     </div>
-
-    <!-- Summary stats -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card bg-grad-teal">
-                <h6><i class="bi bi-check-circle"></i> Total Collected</h6>
-                <h3>Rs. {{ total_collected|default:"0" }}</h3>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-grad-red">
-                <h6><i class="bi bi-x-circle"></i> Total Unpaid</h6>
-                <h3>Rs. {{ total_unpaid|default:"0" }}</h3>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-grad-orange">
-                <h6><i class="bi bi-receipt"></i> Total Records</h6>
-                <h3 id="totalRecords">{{ fees|length }}</h3>
-            </div>
-        </div>
-    </div>
-
     <!-- Messages -->
     {% if messages %}
     <div class="mb-3">
